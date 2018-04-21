@@ -3,8 +3,12 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-void main()
+#include <opencv2/opencv.hpp> 
+//#include <stdlib.h>
+
+int main()
 {
+	
 	//initialize winsock
 	WSADATA wsData;
 	WORD ver = MAKEWORD(2, 2);
@@ -13,7 +17,7 @@ void main()
 	if (wsok != 0)
 	{
 		std::cerr << "Cant init winsock" << std::endl;
-		return;
+		return -1;
 	}
 
 	//create socket
@@ -21,7 +25,7 @@ void main()
 	if (listening == INVALID_SOCKET)
 	{
 		std::cerr << "cant create a socket" << std::endl;
-		return;
+		return -1;
 	}
 
 	//bind socket to ip addr and port
@@ -35,7 +39,7 @@ void main()
 		std::cerr << "socket bind failed with error #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 
 	//Made winsocket listenining
@@ -45,7 +49,7 @@ void main()
 		std::cerr << "cant made socket listenning, error occurs #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 	
 	//Wait for connection create client
@@ -58,7 +62,7 @@ void main()
 		std::cerr << " cant accept clientsocket with error #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 
 	char host[NI_MAXHOST]; //client remote name
@@ -81,29 +85,61 @@ void main()
 	closesocket(listening);
 
 	//while loop: accept and echo message back to client
-	char buf[4096];
+	char buf[1000000];
 
-	while (1)
-	{
-		ZeroMemory(buf, 4096);
+	/*while (1)
+	{*/
+		ZeroMemory(buf, 1000000);
+		char rows[5];
+		ZeroMemory(rows, 5);
+		char cols[5];
+		ZeroMemory(cols, 5);
+		char lengthBuf[16];
+		ZeroMemory(lengthBuf, 16);
 
-		int bytesReceived = recv(clientSocket, buf, 4096, 0);
+		int bytesReceived = recv(clientSocket, buf, 1000000, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			std::cerr << "Error in receiving from socket with error #" << WSAGetLastError() << std::endl;
-			break;
+			return -1;
 		}
 		if (bytesReceived == 0)
 		{
 			std::cout << "client disconnected" << std::endl;
-			break;
+			return -1;
 		}
+		if (bytesReceived > 0)
+		{
+			
+			for (size_t i = 0; i < 6; i++)
+			{
+				rows[i] = buf[i];
+				cols[i] = buf[i + 6];
+			}
+			int rowsCount = atoi(rows);
+			int colsCount = atoi(cols);
 
-		send(clientSocket, buf, bytesReceived + 1, 0);
+			for (size_t i = 0; i < 17; i++)
+			{
+				lengthBuf[i] = buf[i + 17];
+			}
+			int length = atoi(lengthBuf);
+			cv::Mat image = cv::Mat(rowsCount, colsCount, CV_8UC3);
+			for (size_t i = 0; i < length - 26; i++)
+			{
+				image.data[i] = buf[i + 27];
+			}
+			cv::namedWindow("frame", CV_WINDOW_AUTOSIZE);
+			cv::imshow("frame", image);
+			cv::waitKey(0);
+			//cv::Mat imageRecv
+		}
+		//send(clientSocket, buf, bytesReceived + 1, 0);
 
-	}
+	//}
 	
 	closesocket(clientSocket);
 	WSACleanup();
 	system("pause");
+	return 0;
 }
