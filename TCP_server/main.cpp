@@ -2,12 +2,13 @@
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
-#include <string>
-#include <opencv2/opencv.hpp>
 
+#include <opencv2/opencv.hpp> 
+//#include <stdlib.h>
 
 int main()
 {
+	
 	//initialize winsock
 	WSADATA wsData;
 	WORD ver = MAKEWORD(2, 2);
@@ -84,28 +85,6 @@ int main()
 	closesocket(listening);
 
 	//while loop: accept and echo message back to client
-	//char buf[4096];
-
-	//while (1)
-	//{
-	//	ZeroMemory(buf, 4096);
-
-	//	int bytesReceived = recv(clientSocket, buf, 4096, 0);
-	//	if (bytesReceived == SOCKET_ERROR)
-	//	{
-	//		std::cerr << "Error in receiving from socket with error #" << WSAGetLastError() << std::endl;
-	//		break;
-	//	}
-	//	if (bytesReceived == 0)
-	//	{
-	//		std::cout << "client disconnected" << std::endl;
-	//		break;
-	//	}
-
-	//	send(clientSocket, buf, bytesReceived + 1, 0);
-
-	//}
-
 	struct RecvImgStruct
 	{
 		int rows;
