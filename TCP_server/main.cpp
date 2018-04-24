@@ -2,8 +2,11 @@
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
+#include <string>
+#include <opencv2/opencv.hpp>
 
-void main()
+
+int main()
 {
 	//initialize winsock
 	WSADATA wsData;
@@ -13,7 +16,7 @@ void main()
 	if (wsok != 0)
 	{
 		std::cerr << "Cant init winsock" << std::endl;
-		return;
+		return -1;
 	}
 
 	//create socket
@@ -21,7 +24,7 @@ void main()
 	if (listening == INVALID_SOCKET)
 	{
 		std::cerr << "cant create a socket" << std::endl;
-		return;
+		return -1;
 	}
 
 	//bind socket to ip addr and port
@@ -35,7 +38,7 @@ void main()
 		std::cerr << "socket bind failed with error #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 
 	//Made winsocket listenining
@@ -45,7 +48,7 @@ void main()
 		std::cerr << "cant made socket listenning, error occurs #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 	
 	//Wait for connection create client
@@ -58,7 +61,7 @@ void main()
 		std::cerr << " cant accept clientsocket with error #" << WSAGetLastError() << std::endl;
 		closesocket(listening);
 		WSACleanup();
-		return;
+		return -1;
 	}
 
 	char host[NI_MAXHOST]; //client remote name
@@ -81,29 +84,58 @@ void main()
 	closesocket(listening);
 
 	//while loop: accept and echo message back to client
-	char buf[4096];
+	//char buf[4096];
 
-	while (1)
+	//while (1)
+	//{
+	//	ZeroMemory(buf, 4096);
+
+	//	int bytesReceived = recv(clientSocket, buf, 4096, 0);
+	//	if (bytesReceived == SOCKET_ERROR)
+	//	{
+	//		std::cerr << "Error in receiving from socket with error #" << WSAGetLastError() << std::endl;
+	//		break;
+	//	}
+	//	if (bytesReceived == 0)
+	//	{
+	//		std::cout << "client disconnected" << std::endl;
+	//		break;
+	//	}
+
+	//	send(clientSocket, buf, bytesReceived + 1, 0);
+
+	//}
+
+	struct RecvImgStruct
 	{
-		ZeroMemory(buf, 4096);
+		int rows;
+		int cols;
+		size_t total;
+	}recvImg;
 
-		int bytesReceived = recv(clientSocket, buf, 4096, 0);
-		if (bytesReceived == SOCKET_ERROR)
+	ZeroMemory(&recvImg, sizeof(recvImg));
+	int recvStructure = recv(clientSocket, (char*)&recvImg, sizeof(recvImg), 0);
+	if (recvStructure != SOCKET_ERROR)
+	{
+		std::cout << "Image structure received with bytes : " << recvStructure << std::endl;
+		char* imgBuff = (char*)malloc(recvImg.total * 3);
+		ZeroMemory(imgBuff, recvImg.total * 3);
+		int recvData = recv(clientSocket, imgBuff, recvImg.total * 3, 0);
+		if (recvData != SOCKET_ERROR)
 		{
-			std::cerr << "Error in receiving from socket with error #" << WSAGetLastError() << std::endl;
-			break;
-		}
-		if (bytesReceived == 0)
-		{
-			std::cout << "client disconnected" << std::endl;
-			break;
-		}
+			//cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
+			cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
+			servImg.data = (uchar*)imgBuff;
 
-		send(clientSocket, buf, bytesReceived + 1, 0);
+			cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
+			cv::imshow("image", servImg);
+			cv::waitKey(0);
 
+		}
 	}
 	
 	closesocket(clientSocket);
 	WSACleanup();
 	system("pause");
+	return 0;
 }
