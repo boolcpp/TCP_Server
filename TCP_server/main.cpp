@@ -85,58 +85,33 @@ int main()
 	closesocket(listening);
 
 	//while loop: accept and echo message back to client
-	char buf[1000000];
+	struct RecvImgStruct
+	{
+		int rows;
+		int cols;
+		size_t total;
+	}recvImg;
 
-	/*while (1)
-	{*/
-		ZeroMemory(buf, 1000000);
-		char rows[5];
-		ZeroMemory(rows, 5);
-		char cols[5];
-		ZeroMemory(cols, 5);
-		char lengthBuf[16];
-		ZeroMemory(lengthBuf, 16);
+	ZeroMemory(&recvImg, sizeof(recvImg));
+	int recvStructure = recv(clientSocket, (char*)&recvImg, sizeof(recvImg), 0);
+	if (recvStructure != SOCKET_ERROR)
+	{
+		std::cout << "Image structure received with bytes : " << recvStructure << std::endl;
+		char* imgBuff = (char*)malloc(recvImg.total * 3);
+		ZeroMemory(imgBuff, recvImg.total * 3);
+		int recvData = recv(clientSocket, imgBuff, recvImg.total * 3, 0);
+		if (recvData != SOCKET_ERROR)
+		{
+			//cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
+			cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
+			servImg.data = (uchar*)imgBuff;
 
-		int bytesReceived = recv(clientSocket, buf, 1000000, 0);
-		if (bytesReceived == SOCKET_ERROR)
-		{
-			std::cerr << "Error in receiving from socket with error #" << WSAGetLastError() << std::endl;
-			return -1;
-		}
-		if (bytesReceived == 0)
-		{
-			std::cout << "client disconnected" << std::endl;
-			return -1;
-		}
-		if (bytesReceived > 0)
-		{
-			
-			for (size_t i = 0; i < 6; i++)
-			{
-				rows[i] = buf[i];
-				cols[i] = buf[i + 6];
-			}
-			int rowsCount = atoi(rows);
-			int colsCount = atoi(cols);
-
-			for (size_t i = 0; i < 17; i++)
-			{
-				lengthBuf[i] = buf[i + 17];
-			}
-			int length = atoi(lengthBuf);
-			cv::Mat image = cv::Mat(rowsCount, colsCount, CV_8UC3);
-			for (size_t i = 0; i < length - 26; i++)
-			{
-				image.data[i] = buf[i + 27];
-			}
-			cv::namedWindow("frame", CV_WINDOW_AUTOSIZE);
-			cv::imshow("frame", image);
+			cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
+			cv::imshow("image", servImg);
 			cv::waitKey(0);
-			//cv::Mat imageRecv
-		}
-		//send(clientSocket, buf, bytesReceived + 1, 0);
 
-	//}
+		}
+	}
 	
 	closesocket(clientSocket);
 	WSACleanup();
