@@ -93,35 +93,44 @@ int main()
 	}recvImg;
 
 	ZeroMemory(&recvImg, sizeof(recvImg));
-	int recvStructure = recv(clientSocket, (char*)&recvImg, sizeof(recvImg), 0);
-	if (recvStructure != SOCKET_ERROR)
-	{
-		std::cout << "Image structure received with bytes : " << recvStructure << std::endl;
-		char* imgBuff = (char*)malloc(recvImg.total * 3);
-		ZeroMemory(imgBuff, recvImg.total * 3);
-		int totalReaded = 0;
-		int needToRead = recvImg.total * 3;
-		while (totalReaded < recvImg.total * 3) {
-			int recvData = recv(clientSocket, imgBuff + totalReaded, needToRead, 0);
-			if (recvData == SOCKET_ERROR) {
-				// ToDo обработать ошибку
+
+	while (true) {
+		int recvStructure = recv(clientSocket, (char*)&recvImg, sizeof(recvImg), 0);
+		if (recvStructure == SOCKET_ERROR || recvStructure == 0)
+			break;
+		if (recvStructure != SOCKET_ERROR)
+		{
+			std::cout << "Image structure received with bytes : " << recvStructure << std::endl;
+			char* imgBuff = (char*)malloc(recvImg.total * 3);
+			ZeroMemory(imgBuff, recvImg.total * 3);
+			int totalReaded = 0;
+			int needToRead = recvImg.total * 3;
+			while (totalReaded < recvImg.total * 3) {
+				int recvData = recv(clientSocket, imgBuff + totalReaded, needToRead, 0);
+				if (recvData == SOCKET_ERROR) {
+					// ToDo обработать ошибку
+					//goto end;
+					std::cout << "cant receive Image data with error #" << WSAGetLastError() << std::endl;
+					return -1;
+				}
+				needToRead -= recvData;
+				totalReaded += recvData;
 			}
-			needToRead -= recvData;
-			totalReaded += recvData;
-		}
 			//cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
 			cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
 			servImg.data = (uchar*)imgBuff;
 
-			cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
+			cv::namedWindow("image", CV_WINDOW_NORMAL);
+			cv::resizeWindow("image", 800, 600);
 			cv::imshow("image", servImg);
-			cv::waitKey(0);
+			cv::waitKey(30);
+		}
 	}
-	
-
 
 	closesocket(clientSocket);
 	WSACleanup();
+	cv::destroyWindow("image");
+	//cvReleaseImage(&("image");
 	system("pause");
 	return 0;
 }
