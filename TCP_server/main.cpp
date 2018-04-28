@@ -107,8 +107,8 @@ int main()
 			int needToRead = recvImg.total * 3;
 			while (totalReaded < recvImg.total * 3) {
 				int recvData = recv(clientSocket, imgBuff + totalReaded, needToRead, 0);
-				if (recvData == SOCKET_ERROR) {
-					// ToDo îáðàáîòàòü îøèáêó
+				if (recvData == SOCKET_ERROR || recvData == 0) {
+					// ToDo Ã®Ã¡Ã°Ã Ã¡Ã®Ã²Ã Ã²Ã¼ Ã®Ã¸Ã¨Ã¡ÃªÃ³
 					//goto end;
 					std::cout << "cant receive Image data with error #" << WSAGetLastError() << std::endl;
 					return -1;
