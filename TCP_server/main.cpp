@@ -5,6 +5,8 @@
 
 #include <opencv2/opencv.hpp> 
 //#include <stdlib.h>
+//for JPG
+#include <vector>
 
 int main()
 {
@@ -85,28 +87,33 @@ int main()
 	closesocket(listening);
 
 	//while loop: accept and echo message back to client
-	struct RecvImgStruct
-	{
-		int rows;
-		int cols;
-		size_t total;
-	}recvImg;
+	//struct RecvImgStruct
+	//{
+	//	int rows;
+	//	int cols;
+	//	size_t total;
+	//}recvImg;
 
-	ZeroMemory(&recvImg, sizeof(recvImg));
+	//ZeroMemory(&recvImg, sizeof(recvImg));
+	size_t length = 0;
 
 	while (true) {
-		int recvStructure = recv(clientSocket, (char*)&recvImg, sizeof(recvImg), 0);
+		int recvStructure = recv(clientSocket, (char*)&length, sizeof(length), 0);
 		if (recvStructure == SOCKET_ERROR || recvStructure == 0)
 			break;
 		if (recvStructure != SOCKET_ERROR)
 		{
 			std::cout << "Image structure received with bytes : " << recvStructure << std::endl;
-			char* imgBuff = (char*)malloc(recvImg.total * 3);
-			ZeroMemory(imgBuff, recvImg.total * 3);
+			/*char* imgBuff = (char*)malloc(recvImg.total * 3);
+			ZeroMemory(imgBuff, recvImg.total * 3);*/
+			std::vector<uchar> Imgbuf;
 			int totalReaded = 0;
-			int needToRead = recvImg.total * 3;
-			while (totalReaded < recvImg.total * 3) {
-				int recvData = recv(clientSocket, imgBuff + totalReaded, needToRead, 0);
+			//int needToRead = recvImg.total * 3;
+			size_t needToRead = length;
+			//while (totalReaded < recvImg.total * 3) {
+			while(totalReaded < length)
+			{
+				int recvData = recv(clientSocket, (char*)Imgbuf[totalReaded], needToRead, 0);
 				if (recvData == SOCKET_ERROR) {
 					// ToDo обработать ошибку
 					//goto end;
@@ -117,8 +124,9 @@ int main()
 				totalReaded += recvData;
 			}
 			//cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
-			cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
-			servImg.data = (uchar*)imgBuff;
+			/*cv::Mat servImg = cv::Mat(recvImg.rows, recvImg.cols, CV_8UC3);
+			servImg.data = (uchar*)imgBuff;*/
+			cv::Mat servImg = cv::imdecode(Imgbuf, 1);
 
 			cv::namedWindow("image", CV_WINDOW_NORMAL);
 			cv::resizeWindow("image", 800, 600);
