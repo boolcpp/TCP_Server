@@ -108,14 +108,11 @@ int main()
 			ZeroMemory(imgBuff, recvImg.total * 3);*/
 			std::vector<uchar> Imgbuf;
 			int totalReaded = 0;
-			//int needToRead = recvImg.total * 3;
-			size_t needToRead = length;
-			//while (totalReaded < recvImg.total * 3) {
-			while(totalReaded < length)
-			{
-				int recvData = recv(clientSocket, (char*)Imgbuf[totalReaded], needToRead, 0);
+			int needToRead = recvImg.total * 3;
+			while (totalReaded < recvImg.total * 3) {
+				int recvData = recv(clientSocket, imgBuff + totalReaded, needToRead, 0);
 				if (recvData == SOCKET_ERROR) {
-					// ToDo îáðàáîòàòü îøèáêó
+					// ToDo Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
 					//goto end;
 					std::cout << "cant receive Image data with error #" << WSAGetLastError() << std::endl;
 					return -1;
